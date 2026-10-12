@@ -1,0 +1,295 @@
+1. Compact Source Files and Instance main() Methods — Final in Java 25
+=======================================================================
+Problem before: Even a small Java program needed a class and a traditional main() method.
+
+Before:
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello Java");
+    }
+}
+
+After Java 25:
+
+void main() {
+    System.out.println("Hello Java");
+}
+
+Why useful? Beginners can write small programs with less boilerplate. Java can implicitly declare a class for this kind of source file.
+
+Interview answer: “Java 25 finalized compact source files and instance main methods, making it easier to start writing Java programs without the usual class and static main boilerplate.”
+
+Note: this simplifies small programs; normal classes and public static void main(String[] args) remain valid.
+
+2. Module Import Declarations — Final in Java 25
+================================================
+Problem before: When using classes from different packages, we often write several import statements.
+
+Before:
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+public class Main {
+    public static void main(String[] args) {
+        List<String> names = List.of("Riya", "Amit");
+        System.out.println(names);
+    }
+}
+
+After Java 25:
+
+import module java.base;
+
+void main() {
+    List<String> names = List.of("Riya", "Amit");
+    System.out.println(names);
+}
+
+Why useful? import module imports the public packages exported by a module, reducing the need for individual import statements.
+
+Interview answer: “Module Import Declarations, finalized in Java 25, allow us to import all exported packages of a module with a single declaration.” 
+Oracle Documentation
++1
+
+3. Flexible Constructor Bodies — Final in Java 25
+=====================================================
+Problem before: In a subclass constructor, an explicit super(...) or this(...) call generally had to come before other statements.
+
+Before:
+
+class Person {
+    Person(String name) {
+        System.out.println(name);
+    }
+}
+
+class Employee extends Person {
+    Employee(String name) {
+        super(validate(name));
+    }
+
+    static String validate(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Name required");
+        }
+        return name;
+    }
+}
+
+After Java 25:
+
+class Person {
+    Person(String name) {
+        System.out.println(name);
+    }
+}
+
+class Employee extends Person {
+    Employee(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Name required");
+        }
+
+        super(name);
+    }
+}
+
+Why useful? We can validate constructor arguments before calling the parent constructor, without always needing a helper method.
+
+Interview answer: “Flexible Constructor Bodies allow certain statements before super() or this(), improving constructor validation and initialization. Those statements cannot access the object under construction through this.” 
+Oracle
++1
+
+4. Primitive Types in Patterns, instanceof, and switch — Preview in Java 25
+===========================================================================
+Problem before: Pattern matching mainly focused on reference types, and primitive values often required separate handling.
+
+Traditional code:
+
+int value = 100;
+
+if (value > 0) {
+    System.out.println("Positive");
+} else {
+    System.out.println("Zero or negative");
+}
+
+Java 25 preview syntax can use primitive type patterns in supported pattern contexts. For example:
+
+Object value = 100;
+
+// Java 25 preview feature
+if (value instanceof int number) {
+    System.out.println(number);
+}
+
+Why useful? It aims to make pattern matching more consistent across primitive and reference types.
+
+Interview answer: “Java 25 previewed primitive type patterns for instanceof and switch, extending pattern matching to primitive types.”
+
+This is a preview feature, so it requires preview-feature compilation and runtime flags. It is not a finalized Java 25 feature. 
+Oracle Documentation
++1
+
+5. Scoped Values — Final in Java 25
+=====================================
+Problem before: We may use ThreadLocal to share data such as a user ID across methods running on the same thread.
+
+Before:
+
+private static final ThreadLocal<String> USER =
+        new ThreadLocal<>();
+
+static void processRequest() {
+    USER.set("Riya");
+
+    try {
+        service();
+    } finally {
+        USER.remove();
+    }
+}
+
+static void service() {
+    System.out.println(USER.get());
+}
+
+After Java 25:
+
+private static final ScopedValue<String> USER =
+        ScopedValue.newInstance();
+
+static void processRequest() {
+    ScopedValue.where(USER, "Riya").run(() -> service());
+}
+
+static void service() {
+    System.out.println(USER.get());
+}
+
+Add this import for the example:
+
+import java.lang.ScopedValue;
+
+Why useful? Scoped values share data within a bounded execution scope without the usual mutable ThreadLocal setup and cleanup pattern.
+
+Interview answer: “Scoped Values became final in Java 25 and provide a safer, scoped way to share immutable data across method calls, especially useful with virtual threads and concurrent tasks.” 
+Oracle
++1
+
+6. Structured Concurrency — Fifth Preview in Java 25
+====================================================
+Problem before: If an API request needs data from multiple services, we may start several asynchronous tasks and handle their failures and cancellation separately.
+
+Conceptually, the work might look like this:
+
+// Conceptual example — not a complete API implementation
+var userTask = fetchUserAsync();
+var orderTask = fetchOrdersAsync();
+
+// We must coordinate results, errors and cancellation.
+
+Structured concurrency provides an API for treating related concurrent tasks as one unit of work. The exact API syntax has evolved through preview releases.
+
+Why useful?
+
+Coordinate related tasks.
+
+Handle failures and cancellation together.
+
+Make concurrent code easier to reason about.
+
+Interview answer: “Structured Concurrency treats related concurrent tasks as a single unit, improving error handling, cancellation and observability.”
+
+It remained a preview API in Java 25, not a finalized feature. 
+Oracle
++1
+
+7. Key Derivation Function (KDF) API — Final in Java 25
+================================================================
+Problem before: Java developers implementing cryptographic workflows often needed provider-specific APIs or external libraries for key derivation.
+
+A key derivation function creates a cryptographic key from secret material and other inputs.
+
+Conceptually:
+
+// Simplified workflow — not complete cryptographic code
+
+byte[] secret = obtainSecret();
+byte[] salt = obtainSalt();
+
+// Derive a key using a secure KDF algorithm.
+byte[] derivedKey = deriveKey(secret, salt);
+
+Java 25 introduces a standard KDF API so applications can use supported key derivation algorithms through a common Java interface.
+
+Why useful? It helps developers build cryptographic applications with standardized key-derivation support.
+
+Interview answer: “Java 25 finalized the Key Derivation Function API, providing a standard API for deriving cryptographic keys from secret material.”
+
+For production security, use a vetted algorithm and correct parameters rather than implementing cryptography yourself. 
+Oracle
++1
+
+8. PEM Encoding API — Preview in Java 25
+========================================
+What problem does it solve? Cryptographic keys and certificates are often exchanged in PEM format, which is a common text-based representation.
+
+Example of the format:
+
+-----BEGIN CERTIFICATE-----
+...encoded certificate data...
+-----END CERTIFICATE-----
+
+Java 25 previewed APIs to encode and decode cryptographic objects such as keys and certificates using PEM.
+
+Why useful? It can simplify interoperability with systems that exchange cryptographic material in PEM format.
+
+Interview answer: “Java 25 previewed a PEM API for encoding and decoding cryptographic objects, including keys and certificates.”
+
+This was a preview API, not a finalized Java 25 feature. 
+Oracle
++1
+
+9. Stable Values — Preview in Java 25
+==========================================
+Problem before: A final field cannot be reassigned after initialization, but sometimes we want a value to be initialized later while still treating it as stable once initialized.
+
+Traditional example:
+
+private final String appName = "MyApplication";
+
+Java 25 previewed a Stable Values API intended to support values that are initialized later but remain stable after initialization.
+
+Why useful? It aims to give the JVM more opportunities to optimize stable values while allowing more flexible initialization.
+
+Interview answer: “Stable Values were previewed in Java 25 to support values that can be initialized later but remain stable, potentially enabling JVM optimizations.”
+
+This was a preview API. It is an advanced JVM topic, so understand the purpose before studying its API details. 
+Oracle
++1
+
+10. Java Flight Recorder (JFR) Improvements
+============================================
+Java 25 also includes improvements to monitoring and performance diagnostics.
+
+JFR Method Timing & Tracing: Adds capabilities for collecting method timing and tracing information.
+
+JFR Cooperative Sampling: Improves the stability of thread-stack sampling.
+
+JFR CPU-Time Profiling: Introduces experimental CPU-time profiling improvements on Linux.
+
+A simplified way to start an application with JFR recording is:
+
+java -XX:StartFlightRecording=filename=app.jfr MyApplication
+
+You can then inspect the recording with Java Flight Recorder tooling to investigate performance problems.
+
+Why useful? These tools help diagnose slow methods, CPU usage and runtime behavior in production applications.
+
+Interview answer: “Java 25 enhances Java Flight Recorder with additional profiling and tracing capabilities to help diagnose application performance issues.” 
+Oracle
++1

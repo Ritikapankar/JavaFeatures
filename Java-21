@@ -1,0 +1,258 @@
+One important point: some features available in Java 21 were introduced in earlier versions. I'll mark those clearly so you don't accidentally claim they were introduced in Java 21.
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1. Virtual Threads — Java 21
+============================
+Problem before: Traditional platform threads are relatively expensive when an application handles many concurrent blocking tasks.
+
+Before Java 21:
+
+Runnable task = () -> {
+    System.out.println("Processing request");
+};
+
+Thread thread = new Thread(task);
+thread.start();
+
+With Java 21:
+
+Thread.startVirtualThread(() -> {
+    System.out.println("Processing request");
+});
+
+You can also create a virtual-thread-per-task executor:
+
+try (var executor =
+         java.util.concurrent.Executors
+             .newVirtualThreadPerTaskExecutor()) {
+
+    executor.submit(() -> {
+        System.out.println("Processing request");
+    });
+}
+
+Why useful? Virtual threads make it easier to handle large numbers of concurrent, mostly blocking tasks, such as HTTP requests or database calls. They do not automatically make CPU-intensive tasks faster.
+
+Interview answer: “Virtual threads are lightweight threads introduced in Java 21 to improve scalability for applications with many concurrent blocking operations.”
+
+2. Pattern Matching for switch — Final in Java 21
+===================================================
+Before: We often used instanceof, explicit casts, and multiple conditions.
+
+static String describe(Object obj) {
+    if (obj instanceof String) {
+        String value = (String) obj;
+        return "String: " + value;
+    }
+
+    if (obj instanceof Integer) {
+        Integer value = (Integer) obj;
+        return "Integer: " + value;
+    }
+
+    return "Unknown";
+}
+
+After:
+
+static String describe(Object obj) {
+    return switch (obj) {
+        case String value -> "String: " + value;
+        case Integer value -> "Integer: " + value;
+        case null -> "Null value";
+        default -> "Unknown";
+    };
+}
+
+Why useful? Cleaner type-based branching, less casting, and better readability.
+
+Interview answer: “Pattern matching for switch lets us select a branch based on an object's type and bind it to a variable directly in the case.”
+
+Note: this feature was previewed before Java 21 and became final in Java 21.
+
+3. Record Patterns — Java 21
+================================
+Problem before: If a record contains data, we need to extract its values using accessor methods.
+
+record Employee(String name, int age) {}
+
+static void printEmployee(Object obj) {
+    if (obj instanceof Employee) {
+        Employee e = (Employee) obj;
+        System.out.println(e.name());
+        System.out.println(e.age());
+    }
+}
+
+After:
+
+record Employee(String name, int age) {}
+
+static void printEmployee(Object obj) {
+    if (obj instanceof Employee(String name, int age)) {
+        System.out.println(name);
+        System.out.println(age);
+    }
+}
+
+Why useful? Record patterns let you check a record's type and extract its components in one step.
+
+Interview answer: “Record patterns, finalized in Java 21, simplify extracting component values from records and support nested patterns.” 
+Oracle Documentation
++1
+
+4. Sequenced Collections — Java 21
+===================================
+Problem before: Collections had different ways to access their first and last elements. For example, List had get(0) and get(size - 1).
+
+Before Java 21:
+
+List<String> names =
+        new ArrayList<>(List.of("Amit", "Riya", "Neha"));
+
+String first = names.get(0);
+String last = names.get(names.size() - 1);
+
+After Java 21:
+
+List<String> names =
+        new ArrayList<>(List.of("Amit", "Riya", "Neha"));
+
+String first = names.getFirst();
+String last = names.getLast();
+
+names.addFirst("Rahul");
+names.addLast("Priya");
+
+List<String> reversed = names.reversed();
+
+Why useful? A consistent API for working with the first and last elements of ordered collections.
+
+Interview answer: “Java 21 introduced sequenced collection interfaces and methods such as getFirst(), getLast(), and reversed().”
+
+Remember: reversed() provides a reverse-ordered view; it does not necessarily create a separate reversed copy. 
+Oracle
++1
+
+5. Unnamed Patterns and Variables — Preview in Java 21
+=======================================================
+Problem before: Sometimes we need to match a value but do not need to use it.
+
+Before:
+
+if (obj instanceof String value) {
+    System.out.println("It is a String");
+}
+
+Here, value is declared but never used.
+
+Java 21 preview syntax:
+
+if (obj instanceof String _) {
+    System.out.println("It is a String");
+}
+
+The underscore _ indicates an unnamed variable or pattern.
+
+Why useful? It makes code cleaner when a matched value is not needed.
+
+Interview answer: “Java 21 previewed unnamed patterns and variables, allowing us to ignore values that are not required.”
+
+This was a preview feature, not a permanent Java 21 feature. 
+Oracle Documentation
++1
+
+6. Unnamed Classes and Instance Main Methods — Preview in Java 21
+=================================================================
+Before: Even a simple Java program required a class declaration and a main method.
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello Java");
+    }
+}
+
+Java 21 preview syntax:
+
+void main() {
+    System.out.println("Hello Java");
+}
+
+Why useful? It makes Java easier for beginners to start learning without introducing every class-related concept immediately.
+
+Interview answer: “Java 21 previewed unnamed classes and instance main methods to simplify writing small Java programs.”
+
+This was also a preview feature in Java 21, not a permanent feature. 
+Oracle Documentation
++1
+
+7. String Templates — Preview in Java 21
+========================================
+Problem before: We commonly used string concatenation or String.format().
+
+Before:
+
+String name = "Riya";
+int age = 25;
+
+String message = "Name: " + name + ", Age: " + age;
+
+Another option:
+
+String message = String.format(
+        "Name: %s, Age: %d", name, age
+);
+
+Java 21 introduced a preview of string templates using syntax like this:
+
+String name = "Riya";
+int age = 25;
+
+// Java 21 preview syntax
+String message = STR."Name: \{name}, Age: \{age}";
+
+Why useful? It provides a more readable way to combine literal text with expressions.
+
+Important: String templates were previewed in Java 21 and later withdrawn from the language design. Do not present this syntax as a standard, finalized Java 21 feature for production code. 
+Oracle
++1
+
+8. Generational ZGC — Java 21
+==============================
+Problem before: Garbage collection can affect application responsiveness, particularly in applications with many objects and strict latency requirements.
+
+Java 21 enhanced the Z Garbage Collector (ZGC) with a generational mode.
+
+java -XX:+UseZGC -XX:+ZGenerational MyApplication
+
+What does generational mean?
+
+The garbage collector separates objects into generations, typically based on whether they are young or old.
+
+Young objects are often short-lived and can be collected frequently.
+
+Old objects tend to survive longer and can be managed separately.
+
+Why useful? Generational ZGC aims to reduce garbage-collection overhead and improve performance for suitable workloads.
+
+Interview answer: “Java 21 introduced generational mode for ZGC, allowing young and old objects to be managed separately to improve garbage-collection efficiency.” 
+Oracle
++1
+
+9. Key Encapsulation Mechanism (KEM) API — Java 21
+==================================================
+What problem does it solve? Secure systems sometimes need to establish a shared secret key using public-key cryptography.
+
+Java 21 introduced a KEM API for this purpose.
+
+A simplified view of the workflow:
+
+// Conceptual workflow, not complete executable code
+
+// 1. Receiver generates a public/private key pair.
+// 2. Sender encapsulates a shared secret using the public key.
+// 3. Receiver decapsulates it using the private key.
+// 4. Both sides derive the same shared secret.
+
+Why useful? It provides a standard Java API for key encapsulation, useful in cryptographic protocols and secure communication.
+
+Interview answer: “The KEM API, introduced in Java 21, supports establishing shared secret keys using public-key cryptography.”

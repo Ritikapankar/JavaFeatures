@@ -1,0 +1,247 @@
+#####Java 17 Interview Quick Revision — Before vs After####
+#1. Records (Java 16, available in Java 17)
+===========================================
+Before — normal class
+
+public class Customer {
+    private String name;
+    private int age;
+
+    public Customer(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+}
+
+After — Record
+
+public record Customer(String name, int age) {}
+
+Benefit: Automatically generates the constructor, accessors, equals(), hashCode() and toString().
+
+Interview: Records are concise, shallowly immutable data-carrier classes, commonly useful for DTOs.
+
+#2. Sealed Classes (Java 17)
+==========================
+Before — inheritance unrestricted
+
+class Animal {}
+class Dog extends Animal {}
+class Cat extends Animal {}
+class Tiger extends Animal {}
+
+After — restrict inheritance
+
+sealed class Animal permits Dog, Cat {}
+
+final class Dog extends Animal {}
+final class Cat extends Animal {}
+
+Benefit: Only permitted classes can directly extend Animal.
+
+Interview: Sealed classes provide controlled inheritance and make class hierarchies more predictable. 
+Oracle Documentation
++1
+
+#3. Pattern Matching for instanceof (Java 16)
+=============================================
+Before
+
+Object obj = "Java";
+
+if (obj instanceof String) {
+    String str = (String) obj;
+    System.out.println(str.length());
+}
+
+After
+
+Object obj = "Java";
+
+if (obj instanceof String str) {
+    System.out.println(str.length());
+}
+
+Benefit: Combines type checking and casting, reducing boilerplate.
+
+Interview: Pattern matching for instanceof declares a typed variable when the type check succeeds.
+
+4. Switch Expressions (Java 14)
+================================
+Before
+
+String result;
+
+switch (day) {
+    case 1:
+        result = "Monday";
+        break;
+    case 2:
+        result = "Tuesday";
+        break;
+    default:
+        result = "Invalid";
+}
+
+After
+
+String result = switch (day) {
+    case 1 -> "Monday";
+    case 2 -> "Tuesday";
+    default -> "Invalid";
+};
+
+Benefit: Cleaner syntax, fewer break statements, and switch can return a value.
+
+Interview: Switch expressions make conditional value assignment concise and reduce accidental fall-through.
+
+5. Text Blocks (Java 15)
+=========================
+Before
+
+String json = "{\n" +
+              "  \"name\": \"Ritika\",\n" +
+              "  \"age\": 22\n" +
+              "}";
+
+After
+
+String json = """
+        {
+          "name": "Ritika",
+          "age": 22
+        }
+        """;
+
+Benefit: Easier multi-line strings for SQL, JSON, HTML, and messages.
+
+Interview: Text blocks simplify multi-line string literals and reduce escaping.
+
+6. Helpful NullPointerExceptions (Java 14)
+==========================================
+Before — less descriptive message
+
+String name = null;
+System.out.println(name.length());
+
+Possible message:
+
+java.lang.NullPointerException
+
+After — Java 17 JVM can give more detail
+
+Cannot invoke "String.length()" because "name" is null
+
+Benefit: Faster debugging by identifying the null expression.
+
+Interview: Helpful NPEs improve error diagnostics; they don't prevent null errors.
+
+7. RandomGenerator API (Java 17)
+================================
+Before
+
+Random random = new Random();
+int number = random.nextInt(6) + 1;
+
+After
+
+RandomGenerator random =
+        RandomGenerator.getDefault();
+
+int number = random.nextInt(1, 7);
+
+Benefit: A common interface supports different random-number algorithms.
+
+Interview: Java 17 enhanced random-number generation with a flexible API for selecting and using algorithms.
+
+8. HexFormat (Java 17)
+=======================
+Before
+
+byte[] bytes = {10, 15, 16};
+
+StringBuilder result = new StringBuilder();
+
+for (byte b : bytes) {
+    result.append(String.format("%02x", b));
+}
+
+System.out.println(result); // 0a0f10
+
+After
+
+HexFormat hex = HexFormat.of();
+
+String result = hex.formatHex(
+        new byte[]{10, 15, 16}
+);
+
+System.out.println(result); // 0a0f10
+
+Benefit: Simple hexadecimal encoding and decoding.
+
+Interview: HexFormat, introduced in Java 17, simplifies converting byte arrays to and from hexadecimal strings.
+
+9. Stream.toList() (Java 16)
+============================
+Before
+
+List<String> names = List.of("Ritika", "Amit");
+
+List<String> result = names.stream()
+        .filter(name -> name.length() > 4)
+        .collect(Collectors.toList());
+
+After
+
+List<String> names = List.of("Ritika", "Amit");
+
+List<String> result = names.stream()
+        .filter(name -> name.length() > 4)
+        .toList();
+
+Benefit: Shorter stream collection syntax.
+
+Interview: Stream.toList() returns an unmodifiable list. Use a collector such as Collectors.toCollection(ArrayList::new) when you need a mutable list.
+
+10. Strong Encapsulation of JDK Internals (Java 17)
+===================================================
+Before — legacy applications might rely on internal APIs
+
+// Example of internal API usage; avoid this.
+import sun.misc.Unsafe;
+
+After — prefer supported public APIs
+
+import java.util.ArrayList;
+
+var names = new ArrayList<String>();
+names.add("Ritika");
+
+Benefit: Better maintainability, security, and compatibility by avoiding internal implementation details.
+
+Interview: Java 17 strongly encapsulates JDK internals by default, though some compatibility exceptions exist.
+
+11. Always-Strict Floating-Point Semantics (Java 17)
+====================================================
+Before — older Java could permit extended-exponent-value behavior in certain contexts
+
+double result = 10.0 / 3.0;
+System.out.println(result);
+
+After — same ordinary code
+
+double result = 10.0 / 3.0;
+System.out.println(result);
+
+Benefit: Floating-point expressions follow consistent strict semantics across platforms. No syntax change is needed.
+
+Interview: Java 17 restored always-strict floating-point semantics.
